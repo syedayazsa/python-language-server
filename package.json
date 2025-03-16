@@ -1,0 +1,43 @@
+{
+  "name": "python-language-server",
+  "version": "1.0.0",
+  "description": "Python Language Server implementation using LSP",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syedayazsa/python-language-server.git"
+  },
+  "keywords": ["python", "language-server", "lsp"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/syedayazsa/python-language-server/issues"
+  },
+  "homepage": "https://github.com/syedayazsa/python-language-server#readme",
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.34",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "eslint": "^8.35.0",
+    "typescript": "^5.2.2"
+  }
+}
