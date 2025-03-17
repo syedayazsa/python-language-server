@@ -7,47 +7,37 @@ import {
   TransportKind
 } from 'vscode-languageclient/node';
 
-let client: LanguageClient;
+let client: LanguageClient | undefined;
 let outputChannel: vscode.OutputChannel;
 
-// Logger utility for consistent logging
+const getTimestamp = (): string => new Date().toISOString();
+
 const Logger = {
-  info: (message: string) => {
-    const timestamp = new Date().toISOString();
-    outputChannel.appendLine(`[INFO][${timestamp}] CLIENT: ${message}`);
-  },
-  log: (message: string) => {
-    const timestamp = new Date().toISOString();
-    outputChannel.appendLine(`[LOG][${timestamp}] CLIENT: ${message}`);
-  },
-  warn: (message: string) => {
-    const timestamp = new Date().toISOString();
-    outputChannel.appendLine(`[WARN][${timestamp}] CLIENT: ${message}`);
-  },
-  error: (message: string) => {
-    const timestamp = new Date().toISOString();
-    outputChannel.appendLine(`[ERROR][${timestamp}] CLIENT: ${message}`);
-  }
+  info: (msg: string): void =>
+    outputChannel.appendLine(`[INFO][${getTimestamp()}] CLIENT: ${msg}`),
+  log: (msg: string): void =>
+    outputChannel.appendLine(`[LOG][${getTimestamp()}] CLIENT: ${msg}`),
+  warn: (msg: string): void =>
+    outputChannel.appendLine(`[WARN][${getTimestamp()}] CLIENT: ${msg}`),
+  error: (msg: string): void =>
+    outputChannel.appendLine(`[ERROR][${getTimestamp()}] CLIENT: ${msg}`)
 };
 
-export function activate(context: vscode.ExtensionContext) {
-  // Create output channel
+export function activate(context: vscode.ExtensionContext): void {
+  // Create and register the output channel.
   outputChannel = vscode.window.createOutputChannel("Custom Python Language Server");
   context.subscriptions.push(outputChannel);
-  
-  Logger.info("Python Language Server extension activating...");
-  
-  // Path to your compiled language server
-  const serverModule = context.asAbsolutePath(
-    path.join('out', 'server', 'server.js')
-  );
-  
+
+  Logger.info("Activating Python Language Server extension...");
+
+  // Resolve the path to the compiled language server.
+  const serverModule = context.asAbsolutePath(path.join('out', 'server', 'server.js'));
   Logger.log(`Server module path: ${serverModule}`);
 
   const serverOptions: ServerOptions = {
     run: { module: serverModule, transport: TransportKind.ipc },
-    debug: { 
-      module: serverModule, 
+    debug: {
+      module: serverModule,
       transport: TransportKind.ipc,
       options: {
         execArgv: ["--nolazy", "--inspect=6009"]
@@ -71,7 +61,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   };
 
-  // Create the language client
   client = new LanguageClient(
     'myPyLanguageServer',
     'My Py Language Server',
@@ -79,29 +68,29 @@ export function activate(context: vscode.ExtensionContext) {
     clientOptions
   );
 
-  // Register event handlers
   client.onDidChangeState(event => {
     Logger.info(`Client state changed: ${event.oldState} -> ${event.newState}`);
   });
 
-  // Start the client
   Logger.info("Starting language client...");
-  client.start();
-  Logger.info("Language client started");
-  
-  // Push a disposable that stops the client when being disposed
+  client.start().then(
+    () => Logger.info("Language client started"),
+    (err) => Logger.error(`Failed to start language client: ${err}`)
+  );
+
+  // Ensure the client stops on extension deactivation.
   context.subscriptions.push({
-    dispose: () => client.stop()
+    dispose: () => {
+      if (client) {
+        client.stop();
+      }
+    }
   });
-  
-  // Show the output channel
+
   outputChannel.show();
 }
 
 export function deactivate(): Thenable<void> | undefined {
   Logger.info("Deactivating extension...");
-  if (!client) {
-    return undefined;
-  }
-  return client.stop();
+  return client ? client.stop() : undefined;
 }
