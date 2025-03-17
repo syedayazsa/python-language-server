@@ -1,20 +1,93 @@
-# python-language-server
+# Python Language Server
 
-## Common Issues with Implementing Language Servers
+A VS Code extension that provides a Python Language Server implementation using Microsoft's Language Server Protocol (LSP). Enhance your Python development experience with intelligent code features, including LLM-assisted code completions.
 
-1. LS are ususally implemented in their native programming languages, hence integrating them into VSCode is a challenge since they have a Node.js runtime.
+![Working Demo](misc/working_demo.gif)
 
-2. Language features can be resource intensive. For eg., to validate a file, LS has to parse large amount of files, build up ASTs for them and perform static program analysis. This could incur significant CPU and memory usage. (We have to insure that VSCode's performance stays unaffected)
+## Background
+Language servers are typically implemented in their native programming languages, which can create integration challenges for code editors like VS Code that run on Node.js. Also, language features can be resource-intensive, requiring considerable CPU and memory to parse files, build ASTs, and perform static analysis.
 
-3. Implementing support for `M` languages in `N` code editors the work of `M * N`.
+The Language Server Protocol (LSP) solves these issues by providing a standardized API between language tooling and code editors. Instead of implementing support for M languages in N editors (requiring M * N implementations), LSP reduces this to M + N.
 
-Microsoft's [Language Server Protocol]() provides a standardized API between language tooling and code editor and fixes the above issues.
+![LSP Architecture](https://code.visualstudio.com/assets/api/language-extensions/language-server-extension-guide/lsp-languages-editors.png)
 
+## Features
 
-![LSP](https://code.visualstudio.com/assets/api/language-extensions/language-server-extension-guide/lsp-languages-editors.png)
+This Python Language Server currently provides:
 
+- ✅ Function definition detection
+  - ✅ Hover information
+  - ✅ Go to definition
+- ✅ LLM-powered intelligent code suggestions
 
-# TODO:
+## Installation
 
-- [ ] Implement a LS for python which offers hover and go to functionality.
-- [ ] 
+1. Clone this repository
+   ```
+   git clone https://github.com/syedayazsa/python-language-server.git
+   ```
+
+2. Install dependencies
+   ```
+   npm install
+   ```
+
+3. Compile the extension
+   ```
+   npm run compile
+   ```
+
+4. Launch and debug in VS Code
+   - Press F5 to launch a new VS Code window with the extension loaded
+
+## Configuration
+
+To enable LLM-powered suggestions, set the `TOGETHER_API_KEY` environment variable with your Together.ai API key.
+
+## Architecture
+
+The extension follows a client-server architecture:
+
+- **Client**: VS Code extension that communicates with the language server
+- **Server**: Node.js process that analyzes Python code and provides language features
+   - **LLM Service**: Integrates with an LLM to provide intelligent code suggestions
+
+### Project Structure
+
+```
+python-language-server/
+├── src/
+│   ├── client/         # VS Code extension client
+│   ├── server/         # Language server implementation
+│   │   ├── server.ts   # Main server implementation
+│   │   ├── llm.ts      # LLM service for intelligent suggestions
+│   │   ├── config.ts   # Configuration settings
+│   │   ├── logger.ts   # Logging utilities
+│   │   └── utils.ts    # Helper functions
+│   └── extension.ts    # Entry point
+├── test/               # Test files
+├── package.json        # Project metadata and dependencies
+└── tsconfig.json       # TypeScript configuration
+```
+
+## Development
+
+This extension is built with TypeScript and implements the LSP. The code is separated into client and server components.
+
+To run the extension during development:
+1. Run `npm run compile` to build the TypeScript files
+2. Press F5 in VS Code to launch a new window with the extension loaded
+3. Open a Python file to see the language server in action
+
+## TODO
+
+- [x] Implement a Language Server for Python with hover and go-to-definition functionality
+- [x] Add basic code completion support
+- [x] Integrate with LLM for intelligent code suggestions
+- [ ] Improve function and class detection with proper Python parsing
+- [ ] Add signature help for function calls
+- [ ] Add diagnostics for syntax errors
+- [ ] Support for code formatting
+
+## Contributing
+Contributions are welcome! Feel free to submit pull requests or open issues.

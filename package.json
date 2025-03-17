@@ -9,6 +9,10 @@
   "activationEvents": [
     "onLanguage:python"
   ],
+  "contributes": {
+    "keybindings": [
+    ]
+  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
@@ -20,7 +24,11 @@
     "type": "git",
     "url": "git+https://github.com/syedayazsa/python-language-server.git"
   },
-  "keywords": ["python", "language-server", "lsp"],
+  "keywords": [
+    "python",
+    "language-server",
+    "lsp"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -28,12 +36,17 @@
   },
   "homepage": "https://github.com/syedayazsa/python-language-server#readme",
   "dependencies": {
+    "@langchain/openai": "^0.4.4",
+    "langchain": "^0.3.19",
+    "node-fetch": "^2.7.0",
+    "together-ai": "^0.13.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
     "vscode-languageserver-textdocument": "^1.0.12"
   },
   "devDependencies": {
     "@types/node": "^16.18.34",
+    "@types/node-fetch": "^2.6.12",
     "@types/vscode": "^1.75.0",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
