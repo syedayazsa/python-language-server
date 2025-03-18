@@ -59,8 +59,7 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
       hoverProvider: true,
       definitionProvider: true,
       completionProvider: {
-        triggerCharacters: ['.', ' ', '\n', ':', '(', '[', ',', '=', '#', '@', '_', '"', "'", ')', ']', ''],
-        resolveProvider: true
+        triggerCharacters: ['.', ' ', '\n', ':', '(', '[', ',', '=', '#', '@', '_', '"', "'", ')', ']']
       }
       // Note: Standard LSP completion provider is used for code suggestions
     }
@@ -202,7 +201,7 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
       detail: 'AI-powered code suggestion', // Additional information
       documentation: {
         kind: 'markdown',
-        value: '```python\n' + suggestion + '\n```'
+        value: `### AI Code Suggestion\n\`\`\`python\n${suggestion}\n\`\`\`\n\n*Press Enter to insert this code*`
       },
       insertText: suggestion, // Text that will be inserted if user accepts the suggestion
       insertTextFormat: InsertTextFormat.Snippet, // Format of the text that will be inserted
@@ -211,6 +210,9 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
       }
     };
 
+    // LSP requires completion providers to return an array of completion items
+    // by design because code completion typically offers multiple suggestions 
+    // for the user to choose from
     return [codeSuggestion];
   } catch (error) {
     logger.error(`Error in completion provider: ${error}`);
@@ -218,26 +220,6 @@ connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem
   }
 });
 
-// Handle completion item resolution
-connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
-  logger.log(`Resolving completion item: ${item.label}`);
-  
-  // We can enhance the completion item with more details if needed
-  if (item.data?.source?.startsWith('llm')) {
-    // Enhance the documentation with better formatting or additional information
-    if (typeof item.documentation === 'object') {
-      const docObj = item.documentation;
-      if (docObj.kind === 'markdown') {
-        const currentValue = docObj.value;
-        docObj.value = `### AI Code Suggestion\n${currentValue}\n\n*Press Enter to insert this code*`;
-      }
-    }
-  }
-  return item;
-});
-
-// ---------------------------------------------------------------------------
 // Start listening for document events and client messages.
-// ---------------------------------------------------------------------------
 documents.listen(connection);
 connection.listen();
