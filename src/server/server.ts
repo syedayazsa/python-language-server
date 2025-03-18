@@ -12,45 +12,32 @@ import {
   Position,
   Range,
   DocumentUri,
+  CompletionItem,
+  CompletionItemKind,
+  CompletionParams,
+  InsertTextFormat,
 } from 'vscode-languageserver/node';
 
-import {
-  TextDocument
-} from 'vscode-languageserver-textdocument';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Logger } from './logger';
+import { LLMService } from './llm';
+import { getWordAtPosition } from './utils';
 
-// Create a connection for the server
+// Create a connection for the server with all proposed features
 const connection = createConnection(ProposedFeatures.all);
 
-// Logger utility for consistent logging
-const Logger = {
-  info: (message: string) => {
-    const timestamp = new Date().toISOString();
-    connection.console.info(`[INFO][${timestamp}] ${message}`);
-  },
-  log: (message: string) => {
-    const timestamp = new Date().toISOString();
-    connection.console.log(`[LOG][${timestamp}] ${message}`);
-  },
-  warn: (message: string) => {
-    const timestamp = new Date().toISOString();
-    connection.console.warn(`[WARN][${timestamp}] ${message}`);
-  },
-  error: (message: string) => {
-    const timestamp = new Date().toISOString();
-    connection.console.error(`[ERROR][${timestamp}] ${message}`);
-  }
-};
+// Initialize Logger
+const logger = new Logger(connection);
 
-// Log server startup
-Logger.info(`Server process started with PID: ${process.pid}`);
+// Initialize LLM service
+const llmService = new LLMService(logger);
 
-// Track open TextDocuments in memory
+logger.info(`Server process started with PID: ${process.pid}`);
+
+// Manage open text documents i.e intializing a document manager
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-// ---------------------------------------------------------------------------
-// DATA STRUCTURES
-// We'll keep a simple map from symbol name -> { uri, range } to store where a function is defined
-// ---------------------------------------------------------------------------
+// DATA STRUCTURES: For storing function definitions
 interface DefinitionInfo {
   uri: DocumentUri;
   range: Range;
@@ -59,10 +46,9 @@ interface DefinitionInfo {
 const functionDefinitions = new Map<string, DefinitionInfo>();
 
 // LIFECYCLE EVENTS
-// Handle server initialization
 connection.onInitialize((params: InitializeParams): InitializeResult => {
-  Logger.info('Python Language Server initializing...');
-  Logger.log(`Client capabilities: ${JSON.stringify(params.capabilities)}`);
+  logger.info('Initializing Python Language Server...');
+  logger.log(`Client capabilities: ${JSON.stringify(params.capabilities)}`);
 
   return {
     capabilities: {
@@ -71,175 +57,187 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
         change: TextDocumentSyncKind.Incremental
       },
       hoverProvider: true,
-      definitionProvider: true
+      definitionProvider: true,
+      completionProvider: {
+        triggerCharacters: ['.', ' ', '\n', ':', '(', '[', ',', '=', '#', '@', '_', '"', "'", ')', ']', ''],
+        resolveProvider: true
+      }
+      // Note: Standard LSP completion provider is used for code suggestions
     }
   };
 });
 
-// After the client is ready, you can do any extra setup
 connection.onInitialized(() => {
-  Logger.info('Python Language Server initialized successfully.');
+  logger.info('Python Language Server initialized successfully.');
 });
 
-// ---------------------------------------------------------------------------
+
 // DOCUMENT HANDLING
-// ---------------------------------------------------------------------------
-
-// Triggered when a document is opened or its content changes
-documents.onDidChangeContent((change) => {
-  Logger.log(`Document changed: ${change.document.uri}`);
-  const textDocument = change.document;
-  parseDocumentForDefinitions(textDocument);
-});
-
+//
 documents.onDidOpen((event) => {
-  Logger.log(`Document opened: ${event.document.uri}`);
+  logger.log(`Document opened: ${event.document.uri}`);
   parseDocumentForDefinitions(event.document);
 });
 
-// Parses a text document to find all function definitions of the form:
-//   def function_name(...):
-function parseDocumentForDefinitions(textDocument: TextDocument) {
-  const text = textDocument.getText();
-  Logger.log(`Parsing document: ${textDocument.uri}, length: ${text.length}`);
-  
-  // Clear old definitions for this file
-  for (let [funcName, info] of functionDefinitions.entries()) {
-    if (info.uri === textDocument.uri) {
-      functionDefinitions.delete(funcName);
-    }
-  }
+documents.onDidChangeContent((change) => {
+  logger.log(`Document changed: ${change.document.uri}`);
+  parseDocumentForDefinitions(change.document);
+});
 
-  // Split into lines and look for "def " at the start
-  const lines = text.split(/\r?\n/g);
-  Logger.log(`Document has ${lines.length} lines`);
-  
+ // Parses to detect Python function definitions
+function parseDocumentForDefinitions(textDocument: TextDocument): void {
+  const text = textDocument.getText();
+  logger.log(`Parsing document: ${textDocument.uri} (length: ${text.length})`);
+
+  // Remove existing definitions from this document.
+  const keysToRemove = Array.from(functionDefinitions.entries())
+    .filter(([_, info]) => info.uri === textDocument.uri)
+    .map(([key]) => key);
+  keysToRemove.forEach(key => functionDefinitions.delete(key));
+
+  const lines = text.split(/\r?\n/);
+  logger.log(`Document has ${lines.length} lines`);
+
+  // Now finding the function definitions
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // A very naive approach to detect function definitions
     if (line.trimStart().startsWith('def ')) {
-      // e.g. line might be "def my_func(param):"
-      // Let's extract "my_func"
       const match = /^def\s+([A-Za-z0-9_]+)/.exec(line);
       if (match) {
         const funcName = match[1];
-        // Range for the entire line (very simplistic)
         const startPos: Position = { line: i, character: 0 };
         const endPos: Position = { line: i, character: line.length };
-        const definitionRange: Range = { start: startPos, end: endPos };
-
-        functionDefinitions.set(funcName, {
-          uri: textDocument.uri,
-          range: definitionRange
-        });
-        Logger.log(`Found function definition: ${funcName} at line ${i}`);
+        functionDefinitions.set(funcName, { uri: textDocument.uri, range: { start: startPos, end: endPos } });
+        logger.log(`Found function definition: ${funcName} at line ${i}`);
       }
     }
   }
-  
-  Logger.log(`Total function definitions found: ${functionDefinitions.size}`);
+  logger.log(`Total function definitions: ${functionDefinitions.size}`);
 }
 
-// ---------------------------------------------------------------------------
 // HOVER PROVIDER
-// ---------------------------------------------------------------------------
 connection.onHover((params: HoverParams): Hover | undefined => {
-  Logger.log(`Hover requested at ${params.textDocument.uri}:${params.position.line}:${params.position.character}`);
+  logger.log(`Hover requested at ${params.textDocument.uri}:${params.position.line}:${params.position.character}`);
   
-  const doc = documents.get(params.textDocument.uri);
+  const doc = documents.get(params.textDocument.uri); // fetching the document with uri
   if (!doc) {
-    Logger.warn('Document not found for hover request');
+    logger.warn('Document not found for hover request');
     return undefined;
   }
 
-  // Get the word that the user is hovering over
   const hoveredWord = getWordAtPosition(doc, params.position);
-  Logger.log(`Hovered word: ${hoveredWord || 'none'}`);
+  logger.log(`Hovered word: ${hoveredWord || 'none'}`);
   
   if (!hoveredWord) {
     return undefined;
   }
 
-  // If we have a definition for that symbol, we can provide a hover
   if (functionDefinitions.has(hoveredWord)) {
-    Logger.log(`Providing hover for function: ${hoveredWord}`);
+    logger.log(`Providing hover for function: ${hoveredWord}`);
     return {
       contents: {
         kind: 'markdown',
-        value: `**Function**: \`${hoveredWord}\`\n\nThis is a simple doc for \`${hoveredWord}\`.`
+        value: `**Function**: \`${hoveredWord}\`\n\nThis is a sample doc for \`${hoveredWord}\`.`
       }
     };
   }
-
   return undefined;
 });
 
-// ---------------------------------------------------------------------------
 // DEFINITION PROVIDER
-// ---------------------------------------------------------------------------
 connection.onDefinition((params: DefinitionParams): Location[] => {
-  Logger.log(`Definition requested at ${params.textDocument.uri}:${params.position.line}:${params.position.character}`);
+  logger.log(`Definition requested at ${params.textDocument.uri}:${params.position.line}:${params.position.character}`);
   
   const doc = documents.get(params.textDocument.uri);
   if (!doc) {
-    Logger.warn('Document not found for definition request');
+    logger.warn('Document not found for definition request');
     return [];
   }
 
-  // Identify the word we want to go to
   const word = getWordAtPosition(doc, params.position);
-  Logger.log(`Word at position: ${word || 'none'}`);
-  
+  logger.log(`Word at position: ${word || 'none'}`);
+
   if (!word) {
     return [];
   }
 
-  // If we know the definition of this word, return its location
   const definitionInfo = functionDefinitions.get(word);
   if (definitionInfo) {
-    Logger.log(`Found definition for: ${word}`);
-    return [
-      {
-        uri: definitionInfo.uri,
-        range: definitionInfo.range
-      }
-    ];
+    logger.log(`Found definition for: ${word}`);
+    return [{
+      uri: definitionInfo.uri,
+      range: definitionInfo.range
+    }];
   }
 
-  Logger.log(`No definition found for: ${word}`);
+  logger.log(`No definition found for: ${word}`);
   return [];
 });
 
-// ---------------------------------------------------------------------------
-// UTILITY: Get the symbol at a given position
-// ---------------------------------------------------------------------------
-function getWordAtPosition(doc: TextDocument, position: Position): string | undefined {
+// COMPLETION PROVIDER
+connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[]> => {
+  logger.log(`Completion requested at ${params.textDocument.uri}:${params.position.line}:${params.position.character}`);
+
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) {
+    logger.warn('Document not found for completion request');
+    return [];
+  }
+
+  // Get the context (preceding lines of code) to provide to the LLM
   const text = doc.getText();
-  // Convert position to an absolute offset
-  const offset = doc.offsetAt(position);
-  if (offset >= text.length) {
-    return undefined;
+  const cursorOffset = doc.offsetAt(params.position);
+  const contextBeforeCursor = text.substring(0, cursorOffset);
+  
+  try {
+    const suggestion = await llmService.getSuggestionsFromLLM(contextBeforeCursor);
+    if (!suggestion) {
+      return [];
+    }
+
+    // Process and create a completion item (suggestion)
+    const codeSuggestion: CompletionItem = {
+      label: 'Code Suggestion', // Dropdown label
+      kind: CompletionItemKind.Snippet, // Type of completion item
+      detail: 'AI-powered code suggestion', // Additional information
+      documentation: {
+        kind: 'markdown',
+        value: '```python\n' + suggestion + '\n```'
+      },
+      insertText: suggestion, // Text that will be inserted if user accepts the suggestion
+      insertTextFormat: InsertTextFormat.Snippet, // Format of the text that will be inserted
+      data: {
+        source: 'llm-main'
+      }
+    };
+
+    return [codeSuggestion];
+  } catch (error) {
+    logger.error(`Error in completion provider: ${error}`);
+    return [];
   }
+});
 
-  // Expand from offset to find boundaries of the "word"
-  const isWordChar = (char: string) => /[A-Za-z0-9_]/.test(char);
-
-  let start = offset;
-  while (start > 0 && isWordChar(text[start - 1])) {
-    start--;
+// Handle completion item resolution
+connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
+  logger.log(`Resolving completion item: ${item.label}`);
+  
+  // We can enhance the completion item with more details if needed
+  if (item.data?.source?.startsWith('llm')) {
+    // Enhance the documentation with better formatting or additional information
+    if (typeof item.documentation === 'object') {
+      const docObj = item.documentation;
+      if (docObj.kind === 'markdown') {
+        const currentValue = docObj.value;
+        docObj.value = `### AI Code Suggestion\n${currentValue}\n\n*Press Enter to insert this code*`;
+      }
+    }
   }
-
-  let end = offset;
-  while (end < text.length && isWordChar(text[end])) {
-    end++;
-  }
-
-  const word = text.substring(start, end);
-  return word.length > 0 ? word : undefined;
-}
+  return item;
+});
 
 // ---------------------------------------------------------------------------
-// Listen for text document events & messages from the client
+// Start listening for document events and client messages.
 // ---------------------------------------------------------------------------
 documents.listen(connection);
 connection.listen();
