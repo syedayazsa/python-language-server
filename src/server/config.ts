@@ -7,11 +7,11 @@ export const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY || '';
 export const LLM_CONFIG = {
   model: "Qwen/Qwen2.5-Coder-32B-Instruct",
   temperature: 0.7,
-  max_tokens: 256
+  max_tokens: 512
 };
 
 // System prompts for different LLM operations
-export const SYSTEM_PROMPTS = {
+export const SYSTEM_PROMPT = {
   codeSuggestion: `You are an expert Python coding assistant.
 
 IMPORTANT:
@@ -22,7 +22,7 @@ IMPORTANT:
 Your response must strictly advance the provided code snippet by directly printing the next logical lines. Always remain consistent with variable names, function signatures, and coding style from the context.`
 };
 
-// Check if API key is available and log warning
+// Check if API key is available
 export function validateConfig(): boolean {
   return TOGETHER_API_KEY !== '';
 } 

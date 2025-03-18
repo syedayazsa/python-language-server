@@ -1,6 +1,6 @@
 import Together from "together-ai";
 import { Logger } from './logger';
-import { TOGETHER_API_KEY, LLM_CONFIG, SYSTEM_PROMPTS, validateConfig } from './config';
+import { TOGETHER_API_KEY, LLM_CONFIG, SYSTEM_PROMPT, validateConfig } from './config';
 
 export class LLMService {
   private together: Together;
@@ -15,7 +15,7 @@ export class LLMService {
       this.logger.warn('WARNING: TOGETHER_API_KEY environment variable is not set. LLM features will be disabled.');
     }
     
-    // Create Together.ai client
+    // Together.ai client
     this.together = new Together({
       apiKey: TOGETHER_API_KEY
     });
@@ -34,7 +34,7 @@ export class LLMService {
     try {
       const response = await this.together.chat.completions.create({
         messages: [
-          { role: "system", content: SYSTEM_PROMPTS.codeSuggestion },
+          { role: "system", content: SYSTEM_PROMPT.codeSuggestion },
           { role: "user", content: codeContext }
         ],
         model: LLM_CONFIG.model,

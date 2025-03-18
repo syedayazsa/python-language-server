@@ -7,35 +7,27 @@ export class Logger {
     this.connection = connection;
   }
 
-  // Gets a timestamp string in ISO format
+  // Get a timestamp string in ISO format
   private getTimestamp(): string {
     return new Date().toISOString();
   }
 
-  /**
-   * Logs an informational message
-   */
+   //Log an informational message
   public info(msg: string): void {
     this.connection.console.info(`[INFO][${this.getTimestamp()}] ${msg}`);
   }
 
-  /**
-   * Logs a standard log message
-   */
+  //Log a standard log message
   public log(msg: string): void {
     this.connection.console.log(`[LOG][${this.getTimestamp()}] ${msg}`);
   }
 
-  /**
-   * Logs a warning message
-   */
+  //Logs a warning message
   public warn(msg: string): void {
     this.connection.console.warn(`[WARN][${this.getTimestamp()}] ${msg}`);
   }
 
-  /**
-   * Logs an error message
-   */
+  //Logs an error message
   public error(msg: string): void {
     this.connection.console.error(`[ERROR][${this.getTimestamp()}] ${msg}`);
   }
