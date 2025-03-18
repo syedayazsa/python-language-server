@@ -85,6 +85,7 @@ To run the extension during development:
 - [x] Add basic code completion support
 - [x] Integrate with LLM for intelligent code suggestions
 - [ ] Add docstrings detection for accurate hover information
+- [ ] Add response caching to save on API call costs
 
 ## Contributing
 Contributions are welcome! Feel free to submit pull requests or open issues.
