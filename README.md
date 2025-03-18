@@ -16,7 +16,7 @@ The Language Server Protocol (LSP) solves these issues by providing a standardiz
 This Python Language Server currently provides:
 
 - ✅ Function definition detection
-  - ✅ Hover information
+  - ✅ Hover information (Dummy)
   - ✅ Go to definition
 - ✅ LLM-powered intelligent code suggestions
 
@@ -84,10 +84,7 @@ To run the extension during development:
 - [x] Implement a Language Server for Python with hover and go-to-definition functionality
 - [x] Add basic code completion support
 - [x] Integrate with LLM for intelligent code suggestions
-- [ ] Improve function and class detection with proper Python parsing
-- [ ] Add signature help for function calls
-- [ ] Add diagnostics for syntax errors
-- [ ] Support for code formatting
+- [ ] Add docstrings detection for accurate hover information
 
 ## Contributing
 Contributions are welcome! Feel free to submit pull requests or open issues.
