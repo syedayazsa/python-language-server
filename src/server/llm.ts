@@ -1,6 +1,11 @@
 import Together from "together-ai";
-import { Logger } from './logger';
-import { TOGETHER_API_KEY, LLM_CONFIG, SYSTEM_PROMPT, validateConfig } from './config';
+import { Logger } from "./logger";
+import {
+  TOGETHER_API_KEY,
+  LLM_CONFIG,
+  SYSTEM_PROMPT,
+  validateConfig,
+} from "./config";
 
 export class LLMService {
   private together: Together;
@@ -10,36 +15,40 @@ export class LLMService {
   constructor(logger: Logger) {
     this.logger = logger;
     this.isAvailable = validateConfig();
-    
+
     if (!this.isAvailable) {
-      this.logger.warn('WARNING: TOGETHER_API_KEY environment variable is not set. LLM features will be disabled.');
+      this.logger.warn(
+        "WARNING: TOGETHER_API_KEY environment variable is not set. LLM features will be disabled."
+      );
     }
-    
+
     // Together.ai client
     this.together = new Together({
-      apiKey: TOGETHER_API_KEY
+      apiKey: TOGETHER_API_KEY,
     });
   }
 
   // Get code suggestions from the LLM model for auto-completion
   async getSuggestionsFromLLM(codeContext: string): Promise<string | null> {
     this.logger.log("Getting code completion suggestions from LLM");
-    
+
     // Return early if API key is not set
     if (!this.isAvailable) {
-      this.logger.warn("Skipping LLM request because TOGETHER_API_KEY is not set");
+      this.logger.warn(
+        "Skipping LLM request because TOGETHER_API_KEY is not set"
+      );
       return null;
     }
-    
+
     try {
       const response = await this.together.chat.completions.create({
         messages: [
           { role: "system", content: SYSTEM_PROMPT.codeSuggestion },
-          { role: "user", content: codeContext }
+          { role: "user", content: codeContext },
         ],
         model: LLM_CONFIG.model,
         temperature: LLM_CONFIG.temperature,
-        max_tokens: LLM_CONFIG.max_tokens
+        max_tokens: LLM_CONFIG.max_tokens,
       });
 
       const suggestion: string = response.choices?.[0]?.message?.content || "";

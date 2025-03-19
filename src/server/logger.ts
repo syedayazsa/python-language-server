@@ -1,4 +1,4 @@
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from "vscode-languageserver/node";
 
 export class Logger {
   private connection: Connection;
@@ -12,7 +12,7 @@ export class Logger {
     return new Date().toISOString();
   }
 
-   //Log an informational message
+  //Log an informational message
   public info(msg: string): void {
     this.connection.console.info(`[INFO][${this.getTimestamp()}] ${msg}`);
   }
@@ -31,4 +31,4 @@ export class Logger {
   public error(msg: string): void {
     this.connection.console.error(`[ERROR][${this.getTimestamp()}] ${msg}`);
   }
-} 
+}
