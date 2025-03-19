@@ -44,14 +44,6 @@ This Python Language Server currently provides:
 
 To enable LLM-powered suggestions, set the `TOGETHER_API_KEY` environment variable with your Together.ai API key.
 
-## Architecture
-
-The extension follows a client-server architecture:
-
-- **Client**: VS Code extension that communicates with the language server
-- **Server**: Node.js process that analyzes Python code and provides language features
-   - **LLM Service**: Integrates with an LLM to provide intelligent code suggestions
-
 ### Project Structure
 
 ```
@@ -71,14 +63,16 @@ python-language-server/
 └── tsconfig.json       # TypeScript configuration
 ```
 
-## Development
 
-This extension is built with TypeScript and implements the LSP. The code is separated into client and server components.
+## Architecture
 
-To run the extension during development:
-1. Run `npm run compile` to build the TypeScript files
-2. Press F5 in VS Code to launch a new window with the extension loaded
-3. Open a Python file to see the language server in action
+The extension follows a client-server architecture:
+
+- **Client**: VS Code extension that communicates with the language server
+- **Server**: Node.js process that analyzes Python code and provides language features
+   - **LLM Service**: Integrates with an LLM to provide intelligent code suggestions
+
+![LSP Architecture](misc/system_diagram.png)
 
 ## TODO
 
@@ -86,7 +80,7 @@ To run the extension during development:
 - [x] Add basic code completion support
 - [x] Integrate with LLM for intelligent code suggestions
 - [ ] Add docstrings detection for accurate hover information
-- [ ] Add response caching to save on API call costs
+- [ ] Add response caching to save up on API call costs
 - [ ] Migrate from `Together.ai` to an OpenAI compaitable API
 
 ## Contributing
