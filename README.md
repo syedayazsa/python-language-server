@@ -58,6 +58,7 @@ The extension follows a client-server architecture:
 python-language-server/
 ├── src/
 │   ├── client/         # VS Code extension client
+│   │   ├── extension.ts # Client implementation
 │   ├── server/         # Language server implementation
 │   │   ├── server.ts   # Main server implementation
 │   │   ├── llm.ts      # LLM service for intelligent suggestions
@@ -86,6 +87,7 @@ To run the extension during development:
 - [x] Integrate with LLM for intelligent code suggestions
 - [ ] Add docstrings detection for accurate hover information
 - [ ] Add response caching to save on API call costs
+- [ ] Migrate from `Together.ai` to an OpenAI compaitable API
 
 ## Contributing
 Contributions are welcome! Feel free to submit pull requests or open issues.
