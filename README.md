@@ -82,6 +82,7 @@ The extension follows a client-server architecture:
 - [ ] Add docstrings detection for accurate hover information
 - [ ] Add response caching to save up on API call costs
 - [ ] Migrate from `Together.ai` to an OpenAI compaitable API
+- [ ] Chat Interface
 
 ## Contributing
 Contributions are welcome! Feel free to submit pull requests or open issues.
