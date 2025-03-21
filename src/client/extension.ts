@@ -1,10 +1,10 @@
 import * as path from "path";
-import * as vscode from "vscode";
+import * as vscode from "vscode"; //VSCode API
 import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind,
+  LanguageClient, // Class representing the client
+  LanguageClientOptions, // config options for langauge client
+  ServerOptions, // defines how to start language server
+  TransportKind, // Transfort mechanism bw client and server
 } from "vscode-languageclient/node";
 
 let client: LanguageClient | undefined;

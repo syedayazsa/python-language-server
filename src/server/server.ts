@@ -1,21 +1,21 @@
 import {
-  createConnection,
-  ProposedFeatures,
-  TextDocuments,
-  TextDocumentSyncKind,
-  InitializeParams,
-  InitializeResult,
-  Hover,
-  HoverParams,
-  DefinitionParams,
-  Location,
-  Position,
-  Range,
+  createConnection, // For connection bw C & S
+  ProposedFeatures, // To enable all proposed LSP features for server
+  TextDocuments, // Manage & Sync text docs withing server
+  TextDocumentSyncKind, //enum defining how changes sent from C2S
+  InitializeParams, // Type (Params received druing server init)
+  InitializeResult, // Type (Resp. sent after init)
+  Hover, // Type for hover info to be returned
+  HoverParams, // Type (params received when a hover req is made)
+  DefinitionParams, // Type (params when def. req. is made)
+  Location, // Location within a doc
+  Position, // position in a text doc (line and char)
+  Range, // Type range within a doc(start, end)
   DocumentUri,
-  CompletionItem,
-  CompletionItemKind,
-  CompletionParams,
-  InsertTextFormat,
+  CompletionItem, // Suggestion returned back by the server
+  CompletionItemKind, // Enum categorizing completion item
+  CompletionParams, // Type (params received when a completion req is made)
+  InsertTextFormat, // Enum indicating the format of inserted txt (Snippet or plain)
 } from "vscode-languageserver/node";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
@@ -87,7 +87,6 @@ connection.onInitialized(() => {
 });
 
 // DOCUMENT HANDLING
-//
 documents.onDidOpen((event) => {
   logger.log(`Document opened: ${event.document.uri}`);
   parseDocumentForDefinitions(event.document);
@@ -103,16 +102,16 @@ function parseDocumentForDefinitions(textDocument: TextDocument): void {
   const text = textDocument.getText();
   logger.log(`Parsing document: ${textDocument.uri} (length: ${text.length})`);
 
-  // Remove existing definitions from this document.
-  const keysToRemove = Array.from(functionDefinitions.entries())
-    .filter(([_, info]) => info.uri === textDocument.uri)
-    .map(([key]) => key);
-  keysToRemove.forEach((key) => functionDefinitions.delete(key));
+  // Remove existing definitions from this document. (Logic improvement needed here)
+  const keysToRemove = Array.from(functionDefinitions.entries())// Conv KV array
+    .filter(([_, info]) => info.uri === textDocument.uri) // keep those with matching uri
+    .map(([key]) => key); // extract keys
+  keysToRemove.forEach((key) => functionDefinitions.delete(key)); // delete the keys
 
   const lines = text.split(/\r?\n/);
   logger.log(`Document has ${lines.length} lines`);
 
-  // Now finding the function definitions
+  // Now finding the function definitions (TODO: AST)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line.trimStart().startsWith("def ")) {
